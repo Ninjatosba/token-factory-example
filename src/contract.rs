@@ -16,6 +16,8 @@ use osmosis_std::types::osmosis::tokenfactory::v1beta1::{
     DenomAuthorityMetadata, QueryDenomAuthorityMetadataResponse, TokenfactoryQuerier,
 };
 use osmosis_std::types::osmosis::tokenfactory::v1beta1::{MsgCreateDenom, MsgMint};
+
+use self::execute::try_create_ofnt;
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:tokenfactory-example";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -54,10 +56,30 @@ pub fn execute(
         ExecuteMsg::MintTo2 { amount, mint_to } => {
             execute::try_mint_to2(info, deps, env, amount, mint_to)
         }
+        ExecuteMsg::Test {
+            creation_fee,
+            description,
+            name,
+            preview_uri,
+            schema,
+            sender,
+            symbol,
+        } => try_create_ofnt(
+            env,
+            creation_fee,
+            description,
+            name,
+            preview_uri,
+            schema,
+            sender,
+            symbol,
+        ),
     }
 }
 
 pub mod execute {
+
+    use std::env;
 
     use cosmwasm_std::BankMsg;
 
@@ -86,6 +108,35 @@ pub mod execute {
         Ok(Response::new()
             .add_message(msg_create_denom)
             .add_attribute("method", "try_create_denom2"))
+    }
+
+    pub fn try_create_ofnt(
+        env: Env,
+        creation_fee: Coin,
+        description: String,
+        name: String,
+        preview_uri: String,
+        schema: String,
+        sender: String,
+        symbol: String,
+    ) -> Result<Response, ContractError> {
+        let msg_create_ofnt = CosmosMsg::Stargate {
+            type_url: "/OmniFlix.onft.v1beta1.MsgCreateDenom".to_string(),
+            value: encode_msg_create_ofnt(
+                creation_fee,
+                description,
+                name,
+                preview_uri,
+                schema,
+                sender,
+                symbol,
+            )
+            .into(),
+        };
+
+        Ok(Response::new()
+            .add_message(msg_create_ofnt)
+            .add_attribute("method", "try_create_ofnt"))
     }
 
     pub fn try_mint_to(
@@ -200,6 +251,32 @@ fn encode_msg_create_denom(sender: String, subdenom: String) -> Vec<u8> {
         .append_string(1, sender)
         .append_string(2, subdenom)
         .into_vec()
+}
+
+fn encode_msg_create_ofnt(
+    creation_fee: Coin,
+    description: String,
+    name: String,
+    preview_uri: String,
+    schema: String,
+    sender: String,
+    symbol: String,
+) -> Vec<u8> {
+    let coin = Anybuf::new()
+        .append_string(1, creation_fee.denom)
+        .append_string(2, creation_fee.amount.to_string());
+
+    let msg = Anybuf::new()
+        .append_string(1, "1".to_string())
+        .append_string(2, symbol)
+        .append_string(3, name)
+        .append_string(4, description)
+        .append_string(5, preview_uri)
+        .append_string(6, schema)
+        .append_string(7, sender)
+        .append_message(8, &coin)
+        .into_vec();
+    msg
 }
 
 fn encode_msg_mint(sender: String, amount: &Coin, mint_to_address: String) -> Vec<u8> {

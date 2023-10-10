@@ -15,10 +15,29 @@ pub struct AuthorityMetadataResponse {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateDenom { denom: String },
-    CreateDenom2 { denom: String },
-    MintTo { amount: Coin, mint_to: String },
-    MintTo2 { amount: Coin, mint_to: String },
+    CreateDenom {
+        denom: String,
+    },
+    CreateDenom2 {
+        denom: String,
+    },
+    MintTo {
+        amount: Coin,
+        mint_to: String,
+    },
+    MintTo2 {
+        amount: Coin,
+        mint_to: String,
+    },
+    Test {
+        creation_fee: Coin,
+        description: String,
+        name: String,
+        preview_uri: String,
+        schema: String,
+        sender: String,
+        symbol: String,
+    },
 }
 
 #[cw_serde]
