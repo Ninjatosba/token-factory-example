@@ -57,6 +57,7 @@ pub fn execute(
             execute::try_mint_to2(info, deps, env, amount, mint_to)
         }
         ExecuteMsg::Test {
+            id,
             creation_fee,
             description,
             name,
@@ -64,6 +65,7 @@ pub fn execute(
             schema,
             sender,
             symbol,
+            type_url,
         } => try_create_ofnt(
             env,
             creation_fee,
@@ -73,6 +75,8 @@ pub fn execute(
             schema,
             sender,
             symbol,
+            id,
+            type_url,
         ),
     }
 }
@@ -119,10 +123,13 @@ pub mod execute {
         schema: String,
         sender: String,
         symbol: String,
+        id: String,
+        type_url: String,
     ) -> Result<Response, ContractError> {
         let msg_create_ofnt = CosmosMsg::Stargate {
-            type_url: "/OmniFlix.onft.v1beta1.MsgCreateDenom".to_string(),
+            type_url: type_url,
             value: encode_msg_create_ofnt(
+                id,
                 creation_fee,
                 description,
                 name,
@@ -254,6 +261,7 @@ fn encode_msg_create_denom(sender: String, subdenom: String) -> Vec<u8> {
 }
 
 fn encode_msg_create_ofnt(
+    id: String,
     creation_fee: Coin,
     description: String,
     name: String,
@@ -267,7 +275,7 @@ fn encode_msg_create_ofnt(
         .append_string(2, creation_fee.amount.to_string());
 
     let msg = Anybuf::new()
-        .append_string(1, "1".to_string())
+        .append_string(1, id)
         .append_string(2, symbol)
         .append_string(3, name)
         .append_string(4, description)
@@ -276,6 +284,7 @@ fn encode_msg_create_ofnt(
         .append_string(7, sender)
         .append_message(8, &coin)
         .into_vec();
+    println!("msg: {:?}", Binary(msg.clone()));
     msg
 }
 
@@ -295,10 +304,12 @@ fn encode_query_denom_authority_metadata_request(denom: String) -> Vec<u8> {
 }
 
 mod tests {
+    use crate::contract::encode_msg_create_ofnt;
+
     use super::encode_query_denom_authority_metadata_request;
     use cosmwasm_std::{
         ensure, to_binary, to_vec, Binary, Coin, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
-        Response, StdResult,
+        Response, StdResult, Uint128,
     };
     #[test]
     fn proper_initialization() {
@@ -309,6 +320,27 @@ mod tests {
         dbg!("v", v.clone());
         let vb = Binary(v);
 
-        dbg!("v", Some(vb));
+        println!("vb: {:?}", vb)
+    }
+    #[test]
+    fn test_onft() {
+        let msg_create_ofnt: CosmosMsg = CosmosMsg::Stargate {
+            type_url: "/OmniFlix.onft.v1beta1.MsgCreateDenom".to_string(),
+            value: encode_msg_create_ofnt(
+                "id".to_string(),
+                Coin {
+                    denom: "uusdc".to_string(),
+                    amount: Uint128::new(10000000u128),
+                },
+                "description".to_string(),
+                "name".to_string(),
+                "preview_uri".to_string(),
+                "schema".to_string(),
+                "sender".to_string(),
+                "symbol".to_string(),
+            )
+            .into(),
+        };
+        println!("msg_create_ofnt: {:?}", msg_create_ofnt)
     }
 }

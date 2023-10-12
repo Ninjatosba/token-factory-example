@@ -1,0 +1,1 @@
+2ccfa9ae42a8d7a41196e32dbb3ce73e38ec71629294d3ae519c32fa70f68a18  tokenfactory_example.wasm

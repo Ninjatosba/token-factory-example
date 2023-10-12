@@ -30,6 +30,7 @@ pub enum ExecuteMsg {
         mint_to: String,
     },
     Test {
+        id: String,
         creation_fee: Coin,
         description: String,
         name: String,
@@ -37,6 +38,7 @@ pub enum ExecuteMsg {
         schema: String,
         sender: String,
         symbol: String,
+        type_url: String,
     },
 }
 
